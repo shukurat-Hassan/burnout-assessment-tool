@@ -765,4 +765,318 @@
             const requiredQuestions = ['q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16'];
             for (let question of requiredQuestions) {
                 const value = formData.get(question);
+                if (!value) {
+                    alert(`Please answer question ${question.replace('q', '')} to complete the assessment.`);
+                    return;
+                }
+            }
+            
+            // Collect all response data
+            const responseData = {};
+            for (let [key, value] of formData.entries()) {
+                responseData[key] = value;
+            }
+            
+            // Store response
+            storeResponse(responseData);
+            
+            // Calculate burnout score for feedback
+            const scoreableQuestions = ['q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q14', 'q15', 'q16'];
+            let totalScore = 0;
+            
+            for (let question of scoreableQuestions) {
+                totalScore += parseInt(responseData[question]);
+            }
+            
+            displayResults(totalScore, responseData);
+        }
+        
+        function displayResults(score, responseData) {
+            const resultsDiv = document.getElementById('results');
+            const resultTitle = document.getElementById('resultTitle');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const resultMessage = document.getElementById('resultMessage');
+            const recommendations = document.getElementById('recommendations');
+            
+            scoreDisplay.textContent = `Your Burnout Score: ${score}/44`;
+            
+            let category, title, message, recs;
+            
+            if (score >= 11 && score <= 18) {
+                category = 'green';
+                title = '🟢 GREEN - Low Risk';
+                message = "You're doing well. Let's keep it that way!";
+                recs = `
+                    <h3>✅ Suggested Actions:</h3>
+                    <ul>
+                        <li>Continue healthy habits—don't wait for burnout to start</li>
+                        <li>Use quick stress release exercises during breaks</li>
+                        <li>Encourage peer connection and open conversation</li>
+                    </ul>
+                    <h3>🧠 Mental Health Tips:</h3>
+                    <ul>
+                        <li>Gratitude journaling (3 things you're grateful for at the end of each shift)</li>
+                        <li>Mindful breathing—3 minutes daily (Box breathing: 4-in, 4-hold, 4-out, 4-hold)</li>
+                        <li>Digital detox—30 mins off screens before bed</li>
+                    </ul>
+                    <h3>💪 Physical Exercises:</h3>
+                    <ul>
+                        <li>Neck and shoulder rolls between patients</li>
+                        <li>5-minute walk/stretch outside during lunch</li>
+                        <li>Progressive muscle relaxation before sleep</li>
+                    </ul>
+                    <h3>🌱 Nutrition & Lifestyle:</h3>
+                    <ul>
+                        <li>Stay hydrated—bring a water bottle to work</li>
+                        <li>Balanced meals with protein and whole grains</li>
+                        <li>Avoid caffeine after 3pm</li>
+                    </ul>
+                `;
+            } else if (score >= 19 && score <= 33) {
+                category = 'amber';
+                title = '🟠 AMBER - Moderate Risk';
+                message = "You're at risk of burnout. Take small, proactive steps now.";
+                recs = `
+                    <h3>✅ Suggested Actions:</h3>
+                    <ul>
+                        <li>Talk to a trusted colleague or supervisor</li>
+                        <li>Make small changes to reduce mental load</li>
+                        <li>Use short daily wellbeing check-ins (2-5 mins)</li>
+                    </ul>
+                    <h3>🧠 Mental Health Tips:</h3>
+                    <ul>
+                        <li>5-4-3-2-1 grounding technique (for anxiety/stress)</li>
+                        <li>Limit shift-related rumination (journal and 'leave it on the page')</li>
+                        <li>Listen to calming music on commute home</li>
+                    </ul>
+                    <h3>💪 Physical Exercises:</h3>
+                    <ul>
+                        <li>Desk yoga or stretch breaks (2 mins hourly)</li>
+                        <li>Breathing reset: inhale for 4, exhale for 6 (repeat x5)</li>
+                        <li>10-min walk after work to signal shift end</li>
+                    </ul>
+                    <h3>🌱 Nutrition & Lifestyle:</h3>
+                    <ul>
+                        <li>Cut down on sugary snacks—swap with fruit or nuts</li>
+                        <li>Prioritise sleep hygiene (same bedtime/wake time daily)</li>
+                        <li>Limit alcohol and increase magnesium-rich foods (spinach, almonds)</li>
+                    </ul>
+                `;
+            } else {
+                category = 'red';
+                title = '🔴 RED - High Risk';
+                message = "You're showing signs of burnout. Please take action now.";
+                recs = `
+                    <h3>✅ Suggested Actions:</h3>
+                    <ul>
+                        <li>Self-refer to Occupational Health or EAP</li>
+                        <li>Speak with line manager or wellbeing lead confidentially</li>
+                        <li>Consider booking a few days off if feasible</li>
+                    </ul>
+                    <h3>🧠 Mental Health Support:</h3>
+                    <ul>
+                        <li>Seek professional support (Occupational Health, GP, therapist)</li>
+                        <li>Try guided meditation apps like Calm or Headspace (NHS discounts often available)</li>
+                        <li>Reduce "toxic positivity"—it's okay to say you're struggling</li>
+                    </ul>
+                    <h3>💪 Physical Exercises:</h3>
+                    <ul>
+                        <li>Yoga for stress (Yoga with Adriene—10-minute stress relief)</li>
+                        <li>Try restorative movement: walking in nature, stretching on the floor</li>
+                        <li>Prioritise sleep and rest, even over exercise</li>
+                    </ul>
+                    <h3>🌱 Nutrition & Lifestyle:</h3>
+                    <ul>
+                        <li>Stay hydrated and avoid energy drinks</li>
+                        <li>Meal prep to reduce decision fatigue</li>
+                        <li>Take 20 minutes of "non-doing" (zero productivity, just be)</li>
+                    </ul>
+                `;
+            }
+            
+            resultTitle.textContent = title;
+            resultMessage.textContent = message;
+            recommendations.innerHTML = recs;
+            
+            resultsDiv.className = `results ${category}`;
+            resultsDiv.style.display = 'block';
+            
+            // Add stress level context
+            const stressLevel = parseInt(responseData.q13);
+            const stressContext = document.createElement('div');
+            stressContext.style.marginTop = '15px';
+            stressContext.innerHTML = `<p><strong>Your stress level:</strong> ${stressLevel}/10 ${getStressDescription(stressLevel)}</p>`;
+            scoreDisplay.appendChild(stressContext);
+            
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            
+            // Update response count
+            updateResponseCount();
+        }
+        
+        function getStressDescription(level) {
+            if (level <= 3) return "(Low stress - well managed)";
+            if (level <= 5) return "(Moderate stress - manageable)";
+            if (level <= 7) return "(Elevated stress - needs attention)";
+            return "(High stress - immediate action needed)";
+        }
+        
+        // Download CSV function
+        function downloadCSV() {
+            const responses = JSON.parse(localStorage.getItem('osru_responses') || '[]');
+            if (responses.length === 0) {
+                alert('No responses to download yet.');
+                return;
+            }
+            
+            const headers = [
+                'ID', 'Timestamp', 'Role', 'Employment_Length', 'Shift_Type',
+                'Q4_Emotional_Drain', 'Q5_Sufficient_Time', 'Q6_Positive_Impact', 'Q7_Cynicism',
+                'Q8_Emotionally_Drained', 'Q9_Fatigue', 'Q10_Concentration', 'Q11_Detachment',
+                'Q12_Experiencing_Burnout', 'Q13_Stress_Level', 'Q14_Team_Support', 'Q15_Sleep_Quality',
+                'Q16_Work_Enthusiasm', 'Q17_Stress_Factors', 'Q18_Support_Measures', 'Burnout_Score', 'Risk_Category'
+            ];
+            
+            let csvContent = headers.join(',') + '\\n';
+            
+            responses.forEach(response => {
+                const scoreableQuestions = ['q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q14', 'q15', 'q16'];
+                let burnoutScore = 0;
+                for (let q of scoreableQuestions) {
+                    if (response[q]) burnoutScore += parseInt(response[q]);
+                }
+                
+                let riskCategory = 'Green';
+                if (burnoutScore >= 19 && burnoutScore <= 33) riskCategory = 'Amber';
+                else if (burnoutScore > 33) riskCategory = 'Red';
+                
+                const row = [
+                    response.id,
+                    response.timestamp,
+                    response.q1 || '',
+                    response.q2 || '',
+                    response.q3 || '',
+                    response.q4 || '',
+                    response.q5 || '',
+                    response.q6 || '',
+                    response.q7 || '',
+                    response.q8 || '',
+                    response.q9 || '',
+                    response.q10 || '',
+                    response.q11 || '',
+                    response.q12 || '',
+                    response.q13 || '',
+                    response.q14 || '',
+                    response.q15 || '',
+                    response.q16 || '',
+                    (response.q17 || '').replace(/,/g, ';').replace(/\\n/g, ' '),
+                    (response.q18 || '').replace(/,/g, ';').replace(/\\n/g, ' '),
+                    burnoutScore,
+                    riskCategory
+                ].map(field => `"${field}"`);
+                
+                csvContent += row.join(',') + '\\n';
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `OSRU_Burnout_Responses_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Download summary report
+        function downloadSummary() {
+            const responses = JSON.parse(localStorage.getItem('osru_responses') || '[]');
+            if (responses.length === 0) {
+                alert('No responses to analyze yet.');
+                return;
+            }
+            
+            // Calculate summary statistics
+            let greenCount = 0, amberCount = 0, redCount = 0;
+            let totalBurnoutScore = 0;
+            let totalStressScore = 0;
+            let roleBreakdown = {};
+            
+            responses.forEach(response => {
+                const scoreableQuestions = ['q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q14', 'q15', 'q16'];
+                let burnoutScore = 0;
+                for (let q of scoreableQuestions) {
+                    if (response[q]) burnoutScore += parseInt(response[q]);
+                }
+                
+                totalBurnoutScore += burnoutScore;
+                totalStressScore += parseInt(response.q13 || 0);
+                
+                if (burnoutScore >= 11 && burnoutScore <= 18) greenCount++;
+                else if (burnoutScore >= 19 && burnoutScore <= 33) amberCount++;
+                else redCount++;
+                
+                const role = response.q1 || 'Unknown';
+                roleBreakdown[role] = (roleBreakdown[role] || 0) + 1;
+            });
+            
+            const avgBurnoutScore = (totalBurnoutScore / responses.length).toFixed(1);
+            const avgStressScore = (totalStressScore / responses.length).toFixed(1);
+            
+            const summaryReport = `
+OSRU Staff Burnout Assessment - Summary Report
+Generated: ${new Date().toLocaleString()}
+
+OVERVIEW
+========
+Total Responses: ${responses.length}
+Average Burnout Score: ${avgBurnoutScore}/44
+Average Stress Level: ${avgStressScore}/10
+
+RISK CATEGORIES
+==============
+🟢 Green (Low Risk): ${greenCount} (${((greenCount/responses.length)*100).toFixed(1)}%)
+🟠 Amber (Moderate Risk): ${amberCount} (${((amberCount/responses.length)*100).toFixed(1)}%)
+🔴 Red (High Risk): ${redCount} (${((redCount/responses.length)*100).toFixed(1)}%)
+
+ROLE BREAKDOWN
+=============
+${Object.entries(roleBreakdown).map(([role, count]) => `${role}: ${count} (${((count/responses.length)*100).toFixed(1)}%)`).join('\\n')}
+
+RECOMMENDATIONS
+==============
+${redCount > 0 ? `🚨 URGENT: ${redCount} staff showing signs of burnout - immediate intervention needed` : ''}
+${amberCount > responses.length * 0.3 ? `⚠️ WARNING: ${((amberCount/responses.length)*100).toFixed(1)}% of staff at moderate risk` : ''}
+${avgStressScore > 6 ? `📊 High average stress level (${avgStressScore}/10) - ward-wide stress management needed` : ''}
+
+For detailed analysis, download the full CSV data.
+            `;
+            
+            const blob = new Blob([summaryReport], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `OSRU_Burnout_Summary_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Clear all data
+        function clearData() {
+            if (confirm('Are you sure you want to delete all response data? This cannot be undone.')) {
+                localStorage.removeItem('osru_responses');
+                updateResponseCount();
+                alert('All response data has been cleared.');
+            }
+        }
+        
+        // Initialize response count on page load
+        updateResponseCount();
+    </script>
+</body>
+</html>
 
